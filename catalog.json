@@ -1,0 +1,62 @@
+[
+  {
+    "name": "Mutual Non-Disclosure Agreement (MNDA)",
+    "description": "Standard terms for a mutual non-disclosure agreement allowing two parties to share confidential information for a stated purpose.",
+    "filename": "Mutual-NDA.md"
+  },
+  {
+    "name": "Mutual Non-Disclosure Agreement Cover Page",
+    "description": "Cover page used with the Mutual NDA Standard Terms to fill in party details, purpose, term, and governing law for an executed MNDA.",
+    "filename": "Mutual-NDA-coverpage.md"
+  },
+  {
+    "name": "Cloud Service Agreement (CSA)",
+    "description": "Standard terms for selling and buying cloud software or SaaS products, covering access and use, payment, privacy, warranties, liability, and confidentiality.",
+    "filename": "CSA.md"
+  },
+  {
+    "name": "Design Partner Agreement",
+    "description": "Standard terms giving an early customer access to a product in exchange for feedback while the provider develops and improves it.",
+    "filename": "design-partner-agreement.md"
+  },
+  {
+    "name": "Service Level Agreement (SLA)",
+    "description": "Standard terms defining uptime and support response time targets, service credits, and remedies, designed for use alongside the Cloud Service Agreement.",
+    "filename": "sla.md"
+  },
+  {
+    "name": "Professional Services Agreement (PSA)",
+    "description": "Standard terms governing statements of work for professional services, including deliverables, intellectual property, payment, and warranties.",
+    "filename": "psa.md"
+  },
+  {
+    "name": "Data Processing Agreement (DPA)",
+    "description": "Standard terms addressing the processing of personal data between a provider and customer, including international data transfer mechanisms and security incident response.",
+    "filename": "DPA.md"
+  },
+  {
+    "name": "Software License Agreement",
+    "description": "Standard terms for licensing on-premises or client-side software, covering license grant, restrictions, updates, warranties, and liability.",
+    "filename": "Software-License-Agreement.md"
+  },
+  {
+    "name": "Partnership Agreement",
+    "description": "Standard terms for a business partnership involving cooperation on defined obligations, trademark licensing, and payment between two companies.",
+    "filename": "Partnership-Agreement.md"
+  },
+  {
+    "name": "Pilot Agreement",
+    "description": "Standard terms for a short-term trial or evaluation of a product before a customer commits to a longer-term commercial agreement.",
+    "filename": "Pilot-Agreement.md"
+  },
+  {
+    "name": "Business Associate Agreement (BAA)",
+    "description": "Standard terms required under HIPAA governing a business associate's use and protection of protected health information (PHI) on behalf of a covered entity.",
+    "filename": "BAA.md"
+  },
+  {
+    "name": "AI Addendum",
+    "description": "Standard terms supplementing a product agreement to govern the use of AI or machine learning features, including input/output ownership, model training, and disclaimers.",
+    "filename": "AI-Addendum.md"
+  }
+]

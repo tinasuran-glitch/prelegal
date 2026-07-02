@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__github__issue_write",
+      "Bash(git checkout *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "mcp__github__create_pull_request",
+      "Bash(gh pr *)",
+      "Bash(git fetch *)",
+      "Bash(git pull *)",
+      "mcp__atlassian__getAccessibleAtlassianResources",
+      "mcp__atlassian__getJiraIssue",
+      "mcp__github__search_repositories",
+      "mcp__github__get_file_contents",
+      "Write",
+      "Edit",
+      "Bash(npm *)",
+      "Bash(npx *)",
+      "Bash(node *)",
+      "Bash(mkdir *)",
+      "Bash(rm *)",
+      "Bash(ls *)",
+      "Bash(find *)",
+      "Bash(cat *)"
+    ]
+  }
+}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { sendChatMessage, type ChatMessage, type PartialNdaFields } from "@/lib/chat";
 
 const GREETING: ChatMessage = {
@@ -18,6 +18,15 @@ export function ChatPanel({
   const [input, setInput] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Return focus to the input once the assistant's reply lands (the input
+  // is disabled while sending, so it can't hold focus until re-enabled).
+  useEffect(() => {
+    if (!isSending) {
+      inputRef.current?.focus();
+    }
+  }, [isSending]);
 
   async function sendMessage(event: React.FormEvent) {
     event.preventDefault();
@@ -77,6 +86,7 @@ export function ChatPanel({
 
       <form onSubmit={sendMessage} className="flex gap-2">
         <input
+          ref={inputRef}
           type="text"
           value={input}
           onChange={(event) => setInput(event.target.value)}

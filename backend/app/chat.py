@@ -7,7 +7,10 @@ from pydantic import BaseModel, ConfigDict
 from pydantic.alias_generators import to_camel
 
 MODEL = "openrouter/openai/gpt-oss-120b"
-EXTRA_BODY = {"provider": {"order": ["smartstart"]}}
+# "smartstart" (per the project skill docs) isn't a real OpenRouter provider slug —
+# confirmed via a 404 when forced strict. "cerebras" is the real slug and is what
+# CLAUDE.md's AI design section actually asks for; ~15-20x faster in practice.
+EXTRA_BODY = {"provider": {"order": ["cerebras"]}}
 
 REQUIRED_FIELDS = [
     "party1_name",
@@ -21,6 +24,17 @@ REQUIRED_FIELDS = [
 ]
 
 ISO_DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+
+FIELD_LABELS = {
+    "party1_name": "the first party's signatory name",
+    "party1_company": "the first party's company",
+    "party2_name": "the second party's signatory name",
+    "party2_company": "the second party's company",
+    "purpose": "the purpose of sharing confidential information",
+    "effective_date": "the effective date",
+    "governing_law": "the governing law",
+    "jurisdiction": "the jurisdiction for disputes",
+}
 
 
 class CamelModel(BaseModel):
@@ -95,8 +109,14 @@ confidentiality_years: how long confidentiality obligations last
 
 In every reply, return the complete set of fields known so far (not just what \
 changed this turn) — once a field is established, keep returning it even if a \
-later message doesn't repeat it. Once all required fields are known, say so \
-and briefly summarize what you have."""
+later message doesn't repeat it.
+
+If any required field is still unknown after this message, your reply MUST \
+end with a direct follow-up question asking for exactly the missing required \
+field(s). Never end a reply with only a statement or acknowledgement while \
+required information is still missing. Once all required fields are known, \
+say so and briefly summarize what you have instead of asking another \
+question."""
 
 
 def call_llm(messages: list[ChatMessage]) -> LLMChatTurn:
@@ -114,16 +134,34 @@ def call_llm(messages: list[ChatMessage]) -> LLMChatTurn:
     return LLMChatTurn.model_validate_json(response.choices[0].message.content)
 
 
+def missing_required_fields(fields: NdaFields) -> list[str]:
+    missing = [name for name in REQUIRED_FIELDS if not getattr(fields, name)]
+    if "effective_date" not in missing and not ISO_DATE_RE.match(fields.effective_date or ""):
+        missing.append("effective_date")
+    return missing
+
+
 def compute_is_complete(fields: NdaFields) -> bool:
-    if not ISO_DATE_RE.match(fields.effective_date or ""):
-        return False
-    return all(getattr(fields, name) for name in REQUIRED_FIELDS)
+    return not missing_required_fields(fields)
+
+
+def ensure_follow_up_question(reply: str, fields: NdaFields) -> str:
+    """Guarantees a follow-up question when required info is still missing, since the
+    model doesn't reliably comply with the system prompt's instruction to ask one."""
+    if "?" in reply:
+        return reply
+    missing = missing_required_fields(fields)
+    if not missing:
+        return reply
+    labels = [FIELD_LABELS[name] for name in missing]
+    return f"{reply.rstrip()} Could you also tell me {', '.join(labels)}?"
 
 
 def run_chat_turn(request: ChatRequest) -> ChatTurnResponse:
     turn = call_llm(request.messages)
+    fields = turn.fields
     return ChatTurnResponse(
-        reply=turn.reply,
-        fields=turn.fields,
-        is_complete=compute_is_complete(turn.fields),
+        reply=ensure_follow_up_question(turn.reply, fields),
+        fields=fields,
+        is_complete=compute_is_complete(fields),
     )

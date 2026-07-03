@@ -2,7 +2,7 @@
 set -euo pipefail
 
 cd /app/backend
-uv run uvicorn app.main:app --host 0.0.0.0 --port 8000 &
+uv run --frozen --no-dev uvicorn app.main:app --host 0.0.0.0 --port 8000 &
 BACKEND_PID=$!
 
 cd /app/frontend

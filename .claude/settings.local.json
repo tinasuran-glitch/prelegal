@@ -26,7 +26,8 @@
       "Bash(cat *)",
       "mcp__github__pull_request_read",
       "mcp__github__merge_pull_request",
-      "Bash(git restore *)"
+      "Bash(git restore *)",
+      "Bash(python3 -c \"import json; d=json.load\\(open\\('catalog.json'\\)\\); print\\(len\\(d\\)\\); [print\\(x['name']\\) for x in d]\")"
     ]
   }
 }

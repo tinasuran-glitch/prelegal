@@ -65,6 +65,12 @@ async function renderGeneric(documentType: string, fields: Record<string, string
   return fillGenericDocument(rawStandardTerms, fields, documentType === "dpa" ? DPA_NOTE : undefined);
 }
 
+/** Maps each catalog document-type id to its display name, for past-document listings. */
+export async function getDocumentTypeNames(): Promise<Record<string, string>> {
+  const catalog = await loadCatalog();
+  return Object.fromEntries(catalog.map((entry) => [entry.id, entry.name]));
+}
+
 /** Renders whichever document type the chat has confirmed, from whatever fields are
  * known so far; missing fields render as blanks/placeholders. */
 export async function renderNda(

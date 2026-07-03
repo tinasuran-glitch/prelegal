@@ -65,7 +65,7 @@ Backend available at http://localhost:8000
 **Done and merged to main (KAN-7, AI chat for Mutual NDA):**
 - `POST /api/chat` (`backend/app/chat.py`) replaces the old static form: a freeform conversation extracts Mutual NDA fields turn by turn using Structured Outputs, with completion computed deterministically in Python (not trusted from the model) and a guaranteed follow-up question whenever required fields are still missing.
 - Frontend is a persistent split view — chat on the left, a live-updating document preview on the right that re-renders after every turn.
-- LLM calls route through the `cerebras` OpenRouter provider slug specifically (not `smartstart`, which isn't a real provider — confirmed via a 404 when routing was forced to it); this made turns ~15-20x faster (~0.3-0.5s vs. 5-8s).
+- LLM calls route through the `cerebras` OpenRouter provider slug specifically; this made turns ~15-20x faster (~0.3-0.5s vs. 5-8s).
 
 **Done and merged to main (KAN-8, all 11 document types):**
 - Adds a routing phase to `/api/chat`: while no document type is confirmed, the model classifies the request against all 11 catalog entries. A direct match confirms immediately; an unsupported request gets one specific closest-match suggestion that only locks in once the user agrees on a later turn.

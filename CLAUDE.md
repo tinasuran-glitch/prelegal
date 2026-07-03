@@ -8,7 +8,7 @@ The available documents are covered in the catalog.json file in the project root
 
 @catalog.json
 
-Only the Mutual NDA is currently implemented, via a filled-in form (not AI chat yet). There is no AI chat, real authentication, or document persistence yet — see "Implementation status" below.
+AI chat now covers all 11 document types in the catalog (not just Mutual NDA), including a routing step that asks what document the user wants and offers the closest supported match if they ask for something unsupported. There is no real authentication or document persistence yet — see "Implementation status" below.
 
 ## Development process
 
@@ -56,15 +56,24 @@ Backend available at http://localhost:8000
 
 ## Implementation status
 
-**Done (KAN-6, technical foundation):**
-- FastAPI backend in `backend/` (uv project), with a SQLite `users` table dropped and recreated on every startup. No auth logic uses it yet — `GET /api/health` is the only endpoint.
-- Docker image running the backend (`uvicorn`, :8000) and the frontend (`next start`, :3000) as two processes; `templates/` is copied into the image so the NDA generator can read it at runtime.
+**Done and merged to main (KAN-6, technical foundation):**
+- FastAPI backend in `backend/` (uv project), with a SQLite `users` table dropped and recreated on every startup. No auth logic uses it yet.
+- Docker image running the backend (`uvicorn`, :8000) and the frontend (`next start`, :3000) as two processes; multi-stage build (`Dockerfile`) so devDependencies/package caches never reach the final image, with BuildKit cache mounts for npm/uv/apt.
 - `scripts/start-*` / `scripts/stop-*` for Mac, Linux, Windows.
 - A fake login screen (`frontend/components/AuthGate.tsx` + `LoginScreen.tsx`): any credentials pass, state is kept in `localStorage` only, nothing is sent to the backend or written to the users table.
 
+**Done and merged to main (KAN-7, AI chat for Mutual NDA):**
+- `POST /api/chat` (`backend/app/chat.py`) replaces the old static form: a freeform conversation extracts Mutual NDA fields turn by turn using Structured Outputs, with completion computed deterministically in Python (not trusted from the model) and a guaranteed follow-up question whenever required fields are still missing.
+- Frontend is a persistent split view — chat on the left, a live-updating document preview on the right that re-renders after every turn.
+- LLM calls route through the `cerebras` OpenRouter provider slug specifically (not `smartstart`, which isn't a real provider — confirmed via a 404 when routing was forced to it); this made turns ~15-20x faster (~0.3-0.5s vs. 5-8s).
+
+**Implemented, open PR not yet merged (KAN-8, all 11 document types):** see PR #7.
+- Adds a routing phase to `/api/chat`: while no document type is confirmed, the model classifies the request against all 11 catalog entries. A direct match confirms immediately; an unsupported request gets one specific closest-match suggestion that only locks in once the user agrees on a later turn.
+- Only Mutual NDA has a real fillable Cover Page template. For the other 10 types (which only have `<span class="..._link">Label</span>` tags naming variables inline in their prose, no companion file), field labels are scraped from each template and a Pydantic model is built dynamically per document type — no per-document hardcoding. The frontend mirrors this with one generic renderer instead of 10 bespoke fill functions.
+- Mutual NDA's KAN-7 logic and rendering are untouched. DPA gets a static note about the SCC/UK Addendum exhibits it references but can't include (no source text for those).
+
 **Not built yet:**
 - Real authentication (sign up / sign in against the users table).
-- AI chat for document selection and field-filling.
-- Any document type beyond the Mutual NDA (still a filled-in form, not AI-driven).
 - Document persistence/storage.
+- A production fix for the CSA/other templates' singular-plural span duplication (e.g. "Subscription Period" vs "Subscription Periods" surfacing as two separate fields) — known, low-impact, not addressed.
 

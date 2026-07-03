@@ -1,20 +1,25 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { sendChatMessage, type ChatMessage, type PartialNdaFields } from "@/lib/chat";
+import { sendChatMessage, type ChatMessage } from "@/lib/chat";
 
 const GREETING: ChatMessage = {
   role: "assistant",
   content:
-    "Hi! I'll help you put together a Common Paper Mutual NDA. Let's start with the two parties — who's involved (names, titles, and companies)?",
+    "Hi! I can help you draft a Mutual NDA, Cloud Service Agreement, Pilot Agreement, and several other legal documents. What kind of agreement do you need today?",
 };
 
 export function ChatPanel({
-  onFieldsChange,
+  onTurnComplete,
 }: {
-  onFieldsChange: (fields: PartialNdaFields, isComplete: boolean) => void;
+  onTurnComplete: (
+    documentType: string | null,
+    fields: Record<string, string | null>,
+    isComplete: boolean
+  ) => void;
 }) {
   const [messages, setMessages] = useState<ChatMessage[]>([GREETING]);
+  const [documentType, setDocumentType] = useState<string | null>(null);
   const [input, setInput] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -40,9 +45,12 @@ export function ChatPanel({
     setError(null);
 
     try {
-      const result = await sendChatMessage(nextMessages);
+      const result = await sendChatMessage(nextMessages, documentType);
       setMessages([...nextMessages, { role: "assistant", content: result.reply }]);
-      onFieldsChange(result.fields, result.isComplete);
+      if (result.documentTypeConfirmed && result.documentType) {
+        setDocumentType(result.documentType);
+      }
+      onTurnComplete(result.documentTypeConfirmed ? result.documentType : null, result.fields, result.isComplete);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
     } finally {
@@ -54,10 +62,10 @@ export function ChatPanel({
     <div className="no-print flex flex-col gap-4 p-6 lg:h-screen lg:min-h-0">
       <header>
         <h1 className="text-2xl font-semibold" style={{ color: "#032147" }}>
-          Mutual NDA Creator
+          Prelegal Document Creator
         </h1>
         <p className="text-sm" style={{ color: "#888888" }}>
-          Chat with the assistant to fill in your Mutual NDA.
+          Chat with the assistant to draft your legal agreement.
         </p>
       </header>
 

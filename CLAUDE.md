@@ -67,10 +67,12 @@ Backend available at http://localhost:8000
 - Frontend is a persistent split view — chat on the left, a live-updating document preview on the right that re-renders after every turn.
 - LLM calls route through the `cerebras` OpenRouter provider slug specifically (not `smartstart`, which isn't a real provider — confirmed via a 404 when routing was forced to it); this made turns ~15-20x faster (~0.3-0.5s vs. 5-8s).
 
-**Implemented, open PR not yet merged (KAN-8, all 11 document types):** see PR #7.
+**Done and merged to main (KAN-8, all 11 document types):**
 - Adds a routing phase to `/api/chat`: while no document type is confirmed, the model classifies the request against all 11 catalog entries. A direct match confirms immediately; an unsupported request gets one specific closest-match suggestion that only locks in once the user agrees on a later turn.
-- Only Mutual NDA has a real fillable Cover Page template. For the other 10 types (which only have `<span class="..._link">Label</span>` tags naming variables inline in their prose, no companion file), field labels are scraped from each template and a Pydantic model is built dynamically per document type — no per-document hardcoding. The frontend mirrors this with one generic renderer instead of 10 bespoke fill functions.
+- Only Mutual NDA has a real fillable Cover Page template. For the other 10 types (which only have `<span class="..._link">Label</span>` tags naming variables inline in their prose, no companion file), field labels are scraped from each template and a Pydantic model is built dynamically per document type — no per-document hardcoding. The frontend mirrors this with one generic renderer (`frontend/lib/genericTemplate.ts`) instead of 10 bespoke fill functions.
 - Mutual NDA's KAN-7 logic and rendering are untouched. DPA gets a static note about the SCC/UK Addendum exhibits it references but can't include (no source text for those).
+- The generic renderer strips every span pattern found across the 10 templates — `_link` spans (replaced with values), `header_2`/`header_3` (converted to bold text), and bare `id`-only spans used in Definitions sections (unwrapped, content kept) — plus a catch-all pass removing any remaining span tag, so malformed source markup (a stray extra `</span>` in CSA.md) can't leak into the rendered document either. Verified clean across all 11 document types.
+- `catalog.json` is copied into the Docker image alongside `templates/` — the backend reads it at import time to build the routing prompt and derive document-type ids; missing it crashed the container on startup (same class of bug as the earlier missing-`templates/` issue in KAN-6).
 
 **Not built yet:**
 - Real authentication (sign up / sign in against the users table).

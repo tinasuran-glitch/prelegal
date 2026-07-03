@@ -13,6 +13,9 @@ function mustReplace(content: string, search: string, replacement: string): stri
 
 function formatDate(isoDate: string): string {
   const [year, month, day] = isoDate.split("-").map(Number);
+  if (!year || !month || !day) {
+    return "[Effective date]";
+  }
   const date = new Date(Date.UTC(year, month - 1, day));
   return new Intl.DateTimeFormat("en-US", {
     year: "numeric",

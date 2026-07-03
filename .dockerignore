@@ -1,0 +1,17 @@
+**/__pycache__/
+**/.pytest_cache/
+**/.mypy_cache/
+**/.ruff_cache/
+backend/.venv/
+backend/data/
+**/*.db
+
+**/node_modules/
+**/.next/
+**/out/
+frontend/.turbo/
+
+.git/
+.env
+.env.*
+!.env.example

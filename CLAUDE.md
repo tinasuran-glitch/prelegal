@@ -8,7 +8,7 @@ The available documents are covered in the catalog.json file in the project root
 
 @catalog.json
 
-AI chat now covers all 11 document types in the catalog (not just Mutual NDA), including a routing step that asks what document the user wants and offers the closest supported match if they ask for something unsupported. There is no real authentication or document persistence yet — see "Implementation status" below.
+AI chat now covers all 11 document types in the catalog (not just Mutual NDA), including a routing step that asks what document the user wants and offers the closest supported match if they ask for something unsupported. Real sign up/sign in and per-user document history are now in place — see "Implementation status" below.
 
 ## Development process
 
@@ -74,8 +74,15 @@ Backend available at http://localhost:8000
 - The generic renderer strips every span pattern found across the 10 templates — `_link` spans (replaced with values), `header_2`/`header_3` (converted to bold text), and bare `id`-only spans used in Definitions sections (unwrapped, content kept) — plus a catch-all pass removing any remaining span tag, so malformed source markup (a stray extra `</span>` in CSA.md) can't leak into the rendered document either. Verified clean across all 11 document types.
 - `catalog.json` is copied into the Docker image alongside `templates/` — the backend reads it at import time to build the routing prompt and derive document-type ids; missing it crashed the container on startup (same class of bug as the earlier missing-`templates/` issue in KAN-6).
 
+**Done and merged to main (KAN-9, multi-user auth & polish):**
+- Real sign up / sign in replaces the old fake `localStorage`-only gate: `backend/app/auth.py` hashes passwords with stdlib `hashlib.pbkdf2_hmac` (per-user random salt, no new dependency), and issues a random session token (`secrets.token_urlsafe`) stored in a new `sessions` table and set as an httpOnly cookie. `frontend/components/AuthContext.tsx` + `AuthGate.tsx` check `/api/auth/me` on load instead of reading a boolean flag.
+- A new `documents` table (`backend/app/documents.py`) autosaves/upserts a row on every chat turn once a document type is confirmed, keyed by a `document_id` threaded through `ChatRequest`/`ChatTurnResponse` (`backend/app/chat.py`) — the first confirmed turn creates the row and returns its id, later turns pass that id back to update the same row. Every read and write is ownership-checked against the authenticated user (404 otherwise), including the chat-driven update path.
+- New read-only "My Documents" list (`frontend/app/documents/page.tsx`) and detail view (`frontend/app/documents/[id]/page.tsx`) — reuses the existing `renderNda` Server Action and `NdaDocument` component; past documents are viewable, not resumable (no chat message history is persisted, only the confirmed field values).
+- New authenticated app shell (`frontend/components/AppShell.tsx`): header with nav ("New Document" / "My Documents"), logged-in user email + logout, and a persistent footer disclaimer that generated documents are drafts subject to legal review, not legal advice.
+- Minor polish: a sign-in/sign-up toggle on the login screen, a typing indicator while the assistant is replying, and a loading state (via `useTransition`) for the live document preview.
+
 **Not built yet:**
-- Real authentication (sign up / sign in against the users table).
-- Document persistence/storage.
+- Password reset, email verification, and rate limiting on auth endpoints — deliberately out of scope for this prototype stage.
+- Resuming a past document's chat conversation (only a read-only snapshot of the confirmed fields is stored, not the message history).
 - A production fix for the CSA/other templates' singular-plural span duplication (e.g. "Subscription Period" vs "Subscription Periods" surfacing as two separate fields) — known, low-impact, not addressed.
 

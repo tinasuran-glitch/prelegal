@@ -4,12 +4,20 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import type { NdaResult } from "@/lib/types";
 
-export function NdaDocument({ result, isComplete }: { result: NdaResult; isComplete: boolean }) {
+export function NdaDocument({
+  result,
+  isComplete,
+  isRendering,
+}: {
+  result: NdaResult;
+  isComplete: boolean;
+  isRendering?: boolean;
+}) {
   return (
     <div className="flex flex-col gap-4 p-6 lg:h-screen lg:min-h-0">
       <div className="no-print flex items-center justify-between gap-4">
         <span className="text-sm font-medium" style={{ color: isComplete ? "#753991" : "#888888" }}>
-          {isComplete ? "✓ Ready to download" : "Draft — still gathering details"}
+          {isRendering ? "Updating preview…" : isComplete ? "✓ Ready to download" : "Draft — still gathering details"}
         </span>
         <button
           type="button"

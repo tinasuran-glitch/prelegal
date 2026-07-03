@@ -1,23 +1,42 @@
 "use client";
 
 import { useState } from "react";
+import { useAuth } from "./AuthContext";
 
-export function LoginScreen({ onLoggedIn }: { onLoggedIn: () => void }) {
+export function LoginScreen() {
+  const { login, signup } = useAuth();
+  const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  async function handleSubmit(event: React.FormEvent) {
+    event.preventDefault();
+    setError(null);
+    setIsSubmitting(true);
+    try {
+      if (mode === "signin") {
+        await login(email, password);
+      } else {
+        await signup(email, password);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
 
   return (
     <main className="flex flex-1 items-center justify-center bg-zinc-50 p-6 dark:bg-black">
       <form
-        onSubmit={(event) => {
-          event.preventDefault();
-          onLoggedIn();
-        }}
+        onSubmit={handleSubmit}
         className="flex w-full max-w-sm flex-col gap-5 rounded-lg border border-zinc-200 bg-white p-8 shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
       >
         <div className="flex flex-col gap-1">
           <h1 className="text-xl font-semibold" style={{ color: "#032147" }}>
-            Sign in to Prelegal
+            {mode === "signin" ? "Sign in to Prelegal" : "Create your Prelegal account"}
           </h1>
           <p className="text-sm" style={{ color: "#888888" }}>
             Draft legal agreements from templates, guided by AI chat.
@@ -42,6 +61,7 @@ export function LoginScreen({ onLoggedIn }: { onLoggedIn: () => void }) {
           <input
             type="password"
             required
+            minLength={8}
             value={password}
             onChange={(event) => setPassword(event.target.value)}
             placeholder="••••••••"
@@ -50,12 +70,31 @@ export function LoginScreen({ onLoggedIn }: { onLoggedIn: () => void }) {
           />
         </label>
 
+        {error && (
+          <p role="alert" className="text-sm font-medium text-red-600 dark:text-red-400">
+            {error}
+          </p>
+        )}
+
         <button
           type="submit"
-          className="rounded-md px-5 py-2.5 text-sm font-medium text-white"
+          disabled={isSubmitting}
+          className="rounded-md px-5 py-2.5 text-sm font-medium text-white disabled:opacity-50"
           style={{ backgroundColor: "#753991" }}
         >
-          Sign in
+          {isSubmitting ? "…" : mode === "signin" ? "Sign in" : "Create account"}
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            setMode(mode === "signin" ? "signup" : "signin");
+            setError(null);
+          }}
+          className="text-sm underline"
+          style={{ color: "#209dd7" }}
+        >
+          {mode === "signin" ? "Need an account? Sign up" : "Already have an account? Sign in"}
         </button>
       </form>
     </main>

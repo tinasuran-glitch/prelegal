@@ -2,24 +2,21 @@ import re
 from datetime import date, datetime, timezone
 from typing import Literal
 
+from fastapi import HTTPException
 from litellm import completion
 from pydantic import BaseModel, ConfigDict, Field, create_model
-from pydantic.alias_generators import to_camel
 
 from app.catalog import DOCUMENT_TYPES, DocumentType
+from app.documents import create_document, get_document_for_user, update_document
+from app.schemas import CamelModel
 
 MODEL = "openrouter/openai/gpt-oss-120b"
-# "smartstart" (per the project skill docs) isn't a real OpenRouter provider slug —
-# confirmed via a 404 when forced strict. "cerebras" is the real slug and is what
-# CLAUDE.md's AI design section actually asks for; ~15-20x faster in practice.
+# Forcing the "cerebras" OpenRouter provider slug (per CLAUDE.md's AI design
+# section) is ~15-20x faster in practice than default provider routing.
 EXTRA_BODY = {"provider": {"order": ["cerebras"]}}
 
 _DOCUMENT_TYPE_IDS = tuple(DOCUMENT_TYPES.keys())
 DocumentTypeId = Literal[_DOCUMENT_TYPE_IDS]
-
-
-class CamelModel(BaseModel):
-    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
 
 
 class ChatMessage(CamelModel):
@@ -30,6 +27,7 @@ class ChatMessage(CamelModel):
 class ChatRequest(CamelModel):
     messages: list[ChatMessage]
     document_type: DocumentTypeId | None = None
+    document_id: int | None = None
 
 
 class ChatTurnResponse(CamelModel):
@@ -38,6 +36,7 @@ class ChatTurnResponse(CamelModel):
     document_type_confirmed: bool = False
     fields: dict[str, str | None] = {}
     is_complete: bool = False
+    document_id: int | None = None
 
 
 def ensure_follow_up_question(reply: str, missing: list[str]) -> str:
@@ -330,11 +329,19 @@ def run_generic_turn(doc_type: DocumentType, messages: list[ChatMessage]) -> Cha
 # ---- Dispatcher ----
 
 
-def run_chat_turn(request: ChatRequest) -> ChatTurnResponse:
+def run_chat_turn(request: ChatRequest, user_id: int) -> ChatTurnResponse:
     if request.document_type is None:
         return run_routing_turn(request.messages)
 
     doc_type = DOCUMENT_TYPES[request.document_type]
-    if doc_type.is_mnda:
-        return run_mnda_turn(request.messages)
-    return run_generic_turn(doc_type, request.messages)
+    result = run_mnda_turn(request.messages) if doc_type.is_mnda else run_generic_turn(doc_type, request.messages)
+
+    if request.document_id is None:
+        document_id = create_document(user_id, result.document_type, result.fields, result.is_complete)
+    else:
+        if get_document_for_user(request.document_id, user_id) is None:
+            raise HTTPException(status_code=404, detail="Document not found.")
+        update_document(request.document_id, result.fields, result.is_complete)
+        document_id = request.document_id
+
+    return result.model_copy(update={"document_id": document_id})

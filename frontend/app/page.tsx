@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { ChatPanel } from "@/components/ChatPanel";
 import { NdaDocument } from "@/components/NdaDocument";
 import { renderNda } from "@/lib/actions";
@@ -11,11 +11,14 @@ export default function Home() {
   const [fields, setFields] = useState<Record<string, string | null>>({});
   const [isComplete, setIsComplete] = useState(false);
   const [preview, setPreview] = useState<NdaResult | null>(null);
+  const [isRendering, startRenderTransition] = useTransition();
 
   useEffect(() => {
     if (!documentType) return;
-    renderNda(documentType, fields).then(setPreview);
-  }, [documentType, fields]);
+    startRenderTransition(async () => {
+      setPreview(await renderNda(documentType, fields));
+    });
+  }, [documentType, fields, startRenderTransition]);
 
   return (
     <main className="flex flex-1 flex-col divide-y divide-zinc-200 bg-zinc-50 dark:divide-zinc-800 dark:bg-black lg:grid lg:grid-cols-2 lg:divide-x lg:divide-y-0">
@@ -27,7 +30,7 @@ export default function Home() {
         }}
       />
       {preview ? (
-        <NdaDocument result={preview} isComplete={isComplete} />
+        <NdaDocument result={preview} isComplete={isComplete} isRendering={isRendering} />
       ) : (
         <div
           className="no-print flex flex-1 items-center justify-center p-6 text-center text-sm lg:h-screen"

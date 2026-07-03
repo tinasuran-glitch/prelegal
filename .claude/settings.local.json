@@ -23,7 +23,10 @@
       "Bash(rm *)",
       "Bash(ls *)",
       "Bash(find *)",
-      "Bash(cat *)"
+      "Bash(cat *)",
+      "mcp__github__pull_request_read",
+      "mcp__github__merge_pull_request",
+      "Bash(git restore *)"
     ]
   }
 }

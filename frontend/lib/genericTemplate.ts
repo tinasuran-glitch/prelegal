@@ -1,6 +1,7 @@
 import type { NdaResult } from "./types";
 
 const SPAN_RE = /<span class="[a-z_]+_link">([^<]+)<\/span>/g;
+const HEADER_SPAN_RE = /<span class="header_[23]"(?:\s+id="[^"]*")?>([^<]+)<\/span>/g;
 const POSSESSIVE_RE = /[’']s$/;
 
 function normalizeLabel(label: string): string {
@@ -17,6 +18,14 @@ function fillSpans(text: string, fields: Record<string, string | null>): string 
     const resolved = value || `[${baseLabel}]`;
     return isPossessive ? `${resolved}'s` : resolved;
   });
+}
+
+/** Strips the `header_2`/`header_3` section-heading spans down to bold markdown text —
+ * react-markdown doesn't render raw HTML, so left as-is these leak into the rendered
+ * document as literal `<span ...>` text. Mirrors how Mutual-NDA.md already writes its
+ * own headings directly as **bold** text instead of span-wrapping them. */
+function stripHeaderSpans(text: string): string {
+  return text.replace(HEADER_SPAN_RE, (_match, innerText: string) => `**${innerText}**`);
 }
 
 /** The full set of fields this template needs, scraped from its own spans — not just
@@ -47,9 +56,8 @@ export function fillGenericDocument(
   appendNote?: string
 ): NdaResult {
   const labels = extractFieldLabels(rawStandardTerms);
-  const standardTerms = appendNote
-    ? `${fillSpans(rawStandardTerms, fields)}\n\n---\n\n${appendNote}`
-    : fillSpans(rawStandardTerms, fields);
+  const filled = stripHeaderSpans(fillSpans(rawStandardTerms, fields));
+  const standardTerms = appendNote ? `${filled}\n\n---\n\n${appendNote}` : filled;
 
   return {
     coverPage: buildKeyTermsSection(labels, fields),

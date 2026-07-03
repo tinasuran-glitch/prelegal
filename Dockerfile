@@ -34,6 +34,7 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /usr/local/bin/
 WORKDIR /app
 
 COPY templates ./templates
+COPY catalog.json ./catalog.json
 
 COPY --from=backend-builder /app/backend/.venv ./backend/.venv
 COPY backend ./backend
